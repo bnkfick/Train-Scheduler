@@ -18,12 +18,13 @@
   <!-- Moment.js Reference -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.22.2/moment.min.js"></script>
 
+  <link rel="stylesheet" type="text/css" href="assets/css/style.css">
 
 </head>
 
 <body>
 
-  <!-- Employee Tracker -->
+  <!-- Train Tracker -->
   <div class="container">
 
     <!-- Jumbotron -->
@@ -36,7 +37,7 @@
 
       <div class="col-md-12">
 
-        <!-- Current Employees-->
+        <!-- Current Trains-->
         <div class="card mb-4">
           <div class="card-header">Current Train Schedule</div>
           <div class="card-body">
@@ -48,7 +49,7 @@
                   <th scope="col">Frequency (min)</th>
                   <th scope="col">Next Arrival</th>
                   <th scope="col">Minutes Away</th>
-                  
+                  <th scope="col"></th>
                 </tr>
               </thead>
               <tbody>
@@ -58,6 +59,8 @@
         </div>
       </div>
     </div>
+
+   
 
     <div class="row">
       <div class="col-md-12">
@@ -77,7 +80,7 @@
                 <input class="form-control" id="destination-input" placeholder="Destination" type="text">
               </div>
               <div class="form-group">
-                <label for="first-train-time-input">First Train Time  Date (HH:mm - military)</label>
+                <label for="first-train-time-input">First Train Time Date (HH:mm - military)</label>
                 <input class="form-control" id="first-train-time-input" placeholder="00:00" type="text">
               </div>
               <div class="form-group">

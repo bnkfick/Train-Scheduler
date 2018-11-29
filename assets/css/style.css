@@ -1,0 +1,13 @@
+
+  
+body {
+    background-image: url("../../assets/images/train-passengers.jpg"); 
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+    background-position: center; 
+    font-family: 'Montserrat', sans-serif;
+    font-size: 18px;
+    line-height: 22px;
+    color: #777777;
+    background-color:#F7F6F2;
+}

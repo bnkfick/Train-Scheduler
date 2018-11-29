@@ -5,9 +5,11 @@
 // 3. Create a way to retrieve trains from the train database.
 // 4. Create a way to calculate the time until next train. Using difference between first time and current time.
 //    Then use moment.js formatting to set difference in minutes or hours and minutes.
+// 5. Add a timer to update trains arrivals every minute
 
 
-// 1. Initialize Firebase
+
+// Initialize Firebase
 var config = {
   apiKey: "AIzaSyCCSxNqNj1GXvKzAaC7AD3TFSo1OonFGsU",
   authDomain: "duhw-3d8f1.firebaseapp.com",
@@ -16,10 +18,87 @@ var config = {
   storageBucket: "duhw-3d8f1.appspot.com",
   messagingSenderId: "719507945949"
 };
-
 firebase.initializeApp(config);
 
 var database = firebase.database();
+
+const txtEmail = document.getElementById('txtEmail');
+const txtPassword = document.getElementById('txtPassword');
+const btnLogin = document.getElementById('btnLogin');
+const btnSignUp = document.getElementById('btnSignUp');
+const btnLogout = document.getElementById('btnLogout');
+
+
+// //@todo validate username and email
+// // Add login event
+// btnLogin.addEventListener('click', e => {
+//   console.log("clicked login button");
+//   //Get email and password
+//   const email = txtEmail.value;
+//   const pass = txtPassword.value;
+
+//   const auth = firebase.auth();
+//   // Sign In
+//   const promise = auth.signInWithEmailAndPassword(email, pass);
+//   promise.catch(e => console.log(e.message));
+// })
+
+
+// // Add login event
+// btnSignUp.addEventListener('click', e => {
+
+//   //Get email and password
+//   const email = txtEmail.value;
+//   const pass = txtPassword.value;
+
+//   const auth = firebase.auth();
+//   // Sign In
+//   auth.createUserWithEmailAndPassword(email, pass);
+
+//   promise.catch(e => displayMsg(e.message));
+// });
+
+// // Add logout event
+// btnLogout.addEventListener('click', e => {
+//   firebase.auth().signOut();
+// });
+
+// firebase.auth().onAuthStateChanged(firebaseUser => {
+//   if (firebaseUser) {
+//     console.log(firebaseUser);
+//     btnLogout.classList.remove('invisible');
+//     btnLogout.classList.add('visible');
+//   } else {
+//     console.log("Not logged in");
+//     btnLogout.classList.remove('visible');
+//     btnLogout.classList.add('invisible');
+//   }
+// });
+
+
+//existing user
+//auth.signInWithEmailAndPassword(email, pass);
+//new user
+//auth.creatUserWithEmailAndPasword(email, pass);
+//return promises that asynchronously 
+//firebaseUser if logged in
+//null if logged out
+//auth.onAuthStateChanged(firebaseUser => { });
+function displayMsg(msg) {
+  console.log("display error message");
+  console.log(msg);
+  //document.getElementById('msg2user').innerHTML(e.message);
+  $("#msg2user").text(msg);
+}
+
+//=================================================================/
+
+var DEBUG = false;
+//Start a Timer for Updating the Time until Next Train Arrival
+var interval;
+var updateTimer = 60;
+
+var trainList = [];
 
 // 2. Button for adding Trains
 $("#add-train-btn").on("click", function (event) {
@@ -39,15 +118,17 @@ $("#add-train-btn").on("click", function (event) {
     trainFrequency: trainFrequency
   };
 
+
   // Uploads train data to the database
   database.ref().push(newTrain);
 
   // Logs everything to console
-  console.log(newTrain.trainName);
-  console.log(newTrain.trainDestination);
-  console.log(newTrain.firstTrainTime);
-  console.log(newTrain.trainFrequency);
+  if (DEBUG) console.log(newTrain.trainName);
+  if (DEBUG) console.log(newTrain.trainDestination);
+  if (DEBUG) console.log(newTrain.firstTrainTime);
+  if (DEBUG) console.log(newTrain.trainFrequency);
 
+  //@todo change to html message
   alert("Train successfully added");
 
   // Clears all of the text-boxes
@@ -57,63 +138,183 @@ $("#add-train-btn").on("click", function (event) {
   $("#frequency-input").val("");
 });
 
+
 // 3. Create Firebase event for adding train to the database and a row in the html when a user adds an entry
 database.ref().on("child_added", function (childSnapshot) {
-  console.log(childSnapshot.val());
+
+  if (DEBUG) console.log(childSnapshot.val());
 
   // Store everything into a variable.
+  if (DEBUG) console.log("KEY: " + childSnapshot.key);
   var trainName = childSnapshot.val().trainName;
   var trainDestination = childSnapshot.val().trainDestination;
   var firstTrainTime = childSnapshot.val().firstTrainTime;
   var trainFrequency = childSnapshot.val().trainFrequency;
+  var trainKey = childSnapshot.key;
+
+  var newTrain = {
+    trainName: trainName,
+    trainDestination: trainDestination,
+    firstTrainTime: firstTrainTime,
+    trainFrequency: trainFrequency,
+    trainKey: trainKey
+  };
+
+  //Code Array of Train Objects Holding/Reflecting DB train data
+  trainList.push(newTrain);
 
   // train Info
-  console.log(trainName);
-  console.log(trainDestination);
-  console.log(firstTrainTime);
-  console.log(trainFrequency);
+  if (DEBUG) console.log(trainName);
+  if (DEBUG) console.log(trainDestination);
+  if (DEBUG) console.log(firstTrainTime);
+  if (DEBUG) console.log(trainFrequency);
 
+  renderTrainRow(newTrain, trainList.length);
+
+  clearInterval(interval);
+  interval = setInterval(updateCountdown, 1000);
+  // If any errors are experienced, log them to console.
+}, function (errorObject) {
+  console.log("The read failed: " + errorObject.code);
+});
+
+$("#train-table").on("click", ".close", function (event) {
+
+  var key = $(this).attr("data-id");
+  if (DEBUG) console.log("delete " + key);
+  database.ref(key).remove();
+});
+
+
+//=============================================================//
+// A Train is being deleted from Firebase
+// Also delete the row
+// As well as the object from the array
+//=============================================================//
+database.ref().on("child_removed", function (childSnapshot) {
+  console.log("on child remove");
+  console.log( childSnapshot.key);
+
+  // Remove the row from the table
+  $("#"+childSnapshot.key).remove();
+
+  // Remove the data from the array
+  var trainI = findObjectIndexByKey(trainList, 'trainKey', childSnapshot.key);
+  console.log(trainI);
+  trainList.slice(trainI, 1);
+}, function (errorObject) {
+  console.log("The remove failed: " + errorObject.code);
+});
+
+function findObjectIndexByKey(array, key, value) {
+  for (var i = 0; i < array.length; i++) {
+      if (array[i][key] === value) {
+          return array[i];
+      }
+  }
+  return null;
+}
+function updateTrainArr() {
+  console.log("update Train Arr");
+  //var userId = firebase.auth().currentUser.uid;
+  //console.log(userId);
+  // return firebase.database().ref('/users/' + userId).once('value').then(function (snapshot) {
+  //   var username = (snapshot.val() && snapshot.val().username) || 'Anonymous';
+
+  // });
+}
+
+function renderTrainSchedule() {
+  $("#train-table > tbody").empty(); // empties out the html
+  console.log("renderTrainSchedule");
+  // render our trains to the page
+  // get Train List From Database
+  // what if an item has been deleted
+  // database.ref()
+  updateTrainArr();
+  for (var i = 0; i < trainList.length; i++) {
+    console.log(trainList[i]);
+    renderTrainRow(trainList[i], i);
+  }
+}
+
+function renderTrainRow(train, i) {
   // Prettify the train start
-  var firstTrainTimePretty = moment.unix(firstTrainTime).format("hh:mm");
+  var firstTrainTimePretty = moment.unix(train.firstTrainTime).format("hh:mm");
 
   // First Time (pushed back 1 year to make sure it comes before current time)
-  var firstTimeConverted = moment(firstTrainTime, "hh:mm").subtract(1, "years");
-  console.log(firstTimeConverted);
+  var firstTimeConverted = moment(train.firstTrainTime, "hh:mm").subtract(1, "years");
+  if (DEBUG) console.log(firstTimeConverted);
 
   // Current Time
   var currentTime = moment();
-  console.log("CURRENT TIME: " + moment(currentTime).format("hh:mm"));
+  if (DEBUG) console.log("CURRENT TIME: " + moment(currentTime).format("hh:mm"));
 
   // Difference between the times
   var diffTime = moment().diff(moment(firstTimeConverted), "minutes");
-  console.log("DIFFERENCE IN TIME: " + diffTime);
+  if (DEBUG) console.log("DIFFERENCE IN TIME: " + diffTime);
   // Time apart (remainder)
-  var tRemainder = diffTime % trainFrequency;
-  console.log(tRemainder);
+  var tRemainder = diffTime % train.trainFrequency;
+  if (DEBUG) console.log(tRemainder);
 
   // Minute Until Train
-  var tMinutesTillTrain = trainFrequency - tRemainder;
-  console.log("MINUTES TILL TRAIN: " + tMinutesTillTrain);
+  var tMinutesTillTrain = train.trainFrequency - tRemainder;
+  if (DEBUG) console.log("MINUTES TILL TRAIN: " + tMinutesTillTrain);
 
   // Next Train
   var nextTrain = moment().add(tMinutesTillTrain, "minutes");
-  console.log("ARRIVAL TIME: " + moment(nextTrain).format("hh:mm"));
-  var nextArrival = moment().diff(moment(firstTrainTime, "X"), "months");
-  console.log(nextArrival);
-
-
+  if (DEBUG) console.log("ARRIVAL TIME: " + moment(nextTrain).format("hh:mm"));
+  var nextArrival = moment().diff(moment(train.firstTrainTime, "X"), "months");
+  if (DEBUG) console.log(nextArrival);
+  console.log("renderTrainRow");
   // Create the new row
-  var newRow = $("<tr>").append(
-    $("<td>").text(trainName),
-    $("<td>").text(trainDestination),
-    $("<td>").text(trainFrequency),
+  var newRow = $("<tr id='" + train.trainKey + "'>").append(
+    $("<td>").text(train.trainName),
+    $("<td>").text(train.trainDestination),
+    $("<td>").text(train.trainFrequency),
     $("<td>").text(moment(nextTrain).format("hh:mm")),
-    $("<td>").text(tMinutesTillTrain),
+    $("<td>").text(tMinutesTillTrain).addClass("minutesTil"),
+    $("<td>").html("<button type='button' data-id='" + train.trainKey + "' class='close' aria-label='Close'><span aria-hidden='true'>&times;</span></button>")
   );
+  
 
   // Append the new row to the table
   $("#train-table > tbody").append(newRow);
-});
+}
+
+
+function updateCountdown() {
+  //var formattedNumber = ("0" + game.qtime).slice(-2);
+  updateTimer--;
+  //if (DEBUG) console.log("timer at work: " + updateTimer);
+  if (updateTimer <= 0) {
+    updateTilTimes();
+  }
+};
+
+//=============================================================================//
+function updateTilTimes() {
+  if (DEBUG) console.log("updateTilTimes - Update Arrival Times and reset timer");
+  renderTrainSchedule();
+  updateTimer = 60;
+  clearInterval(interval);
+  interval = setInterval(updateCountdown, 1000);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
