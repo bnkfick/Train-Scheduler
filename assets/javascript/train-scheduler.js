@@ -6,6 +6,11 @@
 // 4. Create a way to calculate the time until next train. Using difference between first time and current time.
 //    Then use moment.js formatting to set difference in minutes or hours and minutes.
 // 5. Add a timer to update trains arrivals every minute
+// 6. Add a button for deleting train records
+// 7. Add the ability to edit a train record
+// 8. Add the ability to login as a unique user
+// 9. Add the ability for a user to save their own specific train schedule --
+//10.  Make multiple users to log in with different train schedules
 
 
 
@@ -101,6 +106,10 @@ var updateTimer = 60;
 var trainList = [];
 
 // 2. Button for adding Trains
+//    Grab the User Input
+//    Create an object with the user data
+//    Push to the database
+//    Clear out the input fields on the HTML page 
 $("#add-train-btn").on("click", function (event) {
   event.preventDefault();
 
@@ -118,7 +127,6 @@ $("#add-train-btn").on("click", function (event) {
     trainFrequency: trainFrequency
   };
 
-
   // Uploads train data to the database
   database.ref().push(newTrain);
 
@@ -129,17 +137,18 @@ $("#add-train-btn").on("click", function (event) {
   if (DEBUG) console.log(newTrain.trainFrequency);
 
   //@todo change to html message
-  alert("Train successfully added");
+  console.log("Train successfully added");
 
   // Clears all of the text-boxes
   $("#train-name-input").val("");
   $("#destination-input").val("");
-  $("#irst-train-time-input").val("");
+  $("#first-train-time-input").val("");
   $("#frequency-input").val("");
 });
 
 
 // 3. Create Firebase event for adding train to the database and a row in the html when a user adds an entry
+//    Keep track of the trains in a trainList array 
 database.ref().on("child_added", function (childSnapshot) {
 
   if (DEBUG) console.log(childSnapshot.val());
@@ -178,11 +187,96 @@ database.ref().on("child_added", function (childSnapshot) {
   console.log("The read failed: " + errorObject.code);
 });
 
-$("#train-table").on("click", ".close", function (event) {
+// 7. Add the ability to edit a train record
+//    When the user clicks this button, make fields input types
+//    Update a field that indicates if the field is in edit mode
+//        Use this field to prevent attempting to convert to input fields if they are already input fields
+//    Toggle button to SAVE
+$("#train-table").on("click", ".edit", function (event) {
+  console.log($(this));
+  console.log($(this).attr("data-mode"));
+  if ($(this).attr("data-mode") === "edit") {
+    console.log("make fields editable");
+    $(this).attr("data-mode", "save");
+    $(this).text("Save");
 
-  var key = $(this).attr("data-id");
-  if (DEBUG) console.log("delete " + key);
-  database.ref(key).remove();
+    console.log($(this).attr("data-mode"));
+    //var rowElem = $(this).attr("id");
+    //console.log($(this).child('#name'));
+    var key = $(this).attr("data-id");
+    var rowElem = $("#" + key);
+
+    var trainNameCell = rowElem.children('td.name');
+    var html = trainNameCell.html();
+    var input = $('<input class="editTrainName" type="text" />');
+    input.val(html);
+    trainNameCell.html(input);
+
+    var trainDestCell = rowElem.children('td.destination');
+    var html = trainDestCell.html();
+    var input = $('<input class="editTrainDestination" type="text" />');
+    input.val(html);
+    trainDestCell.html(input);
+
+    var trainFreqCell = rowElem.children('td.frequency');
+    var html = trainFreqCell.html();
+    var input = $('<input class="editFrequency" type="text" />');
+    input.val(html);
+    trainFreqCell.html(input);
+  } else {
+
+    var key = $(this).attr("data-id");
+    var rowElem = $("#" + key);
+
+    console.log("SAVE" + key);
+    //update the data
+    //switch the button text back to save
+    //remove the editable fields and replace with static text
+    // Grabs user input
+    var trainName = rowElem.children("td.name").children(".editTrainName").val().trim();
+    console.log(trainName);
+    rowElem.children("td.name").children(".editTrainName").remove;
+    rowElem.children("td.name").text(trainName);
+    var trainDestination = rowElem.children("td.destination").children(".editTrainDestination").val().trim();
+    console.log(trainDestination);
+    rowElem.children("td.destination").children(".editTrainDestination").remove;
+    rowElem.children("td.destination").text(trainDestination);
+    //var firstTrainTime = moment($(rowElem.children("td.frequency").children(".editFrequencyName").val().trim(), "HH:mm").format("X");
+    //console.log(firstTrainTime);
+    
+    var trainFrequency = rowElem.children("td.frequency").children(".editFrequency").val().trim();
+    rowElem.children("td.frequency").children(".editFrequency").remove;
+    rowElem.children("td.frequency").text(trainFrequency);
+
+    //update the array    
+    var editedTrain = findObjectIndexByKey(trainList, 'trainKey', key);
+    editedTrain.trainName = trainName;
+    editedTrain.trainDestination = trainDestination;
+    editedTrain.trainFrequency = trainFrequency;
+    // Uploads train data to the database
+
+    database.ref().child(key).update({ trainName: trainName, trainDestination: trainDestination, trainFrequency: trainFrequency });
+    $(this).attr("data-mode", "edit");
+    $(this).text("Edit");
+  
+    // Logs everything to console
+    if (DEBUG) console.log(editedTrain.trainName);
+    if (DEBUG) console.log(editedTrain.trainDestination);
+    if (DEBUG) console.log(editedTrain.firstTrainTime);
+    if (DEBUG) console.log(editedTrain.trainFrequency);
+
+    //@todo change to html message
+    console.log("Train successfully changed");
+
+  }
+});
+
+$("#train-table").on("click", ".close", function (event) {
+  if (confirm("Do you really want to delete?")) {
+    var key = $(this).attr("data-id");
+    if (DEBUG) console.log("delete " + key);
+    database.ref(key).remove();
+  }
 });
 
 
@@ -193,24 +287,24 @@ $("#train-table").on("click", ".close", function (event) {
 //=============================================================//
 database.ref().on("child_removed", function (childSnapshot) {
   console.log("on child remove");
-  console.log( childSnapshot.key);
+  console.log(childSnapshot.key);
 
   // Remove the row from the table
-  $("#"+childSnapshot.key).remove();
+  $("#" + childSnapshot.key).remove();
 
   // Remove the data from the array
   var trainI = findObjectIndexByKey(trainList, 'trainKey', childSnapshot.key);
-  console.log(trainI);
   trainList.slice(trainI, 1);
 }, function (errorObject) {
   console.log("The remove failed: " + errorObject.code);
 });
 
+
 function findObjectIndexByKey(array, key, value) {
   for (var i = 0; i < array.length; i++) {
-      if (array[i][key] === value) {
-          return array[i];
-      }
+    if (array[i][key] === value) {
+      return array[i];
+    }
   }
   return null;
 }
@@ -228,10 +322,8 @@ function renderTrainSchedule() {
   $("#train-table > tbody").empty(); // empties out the html
   console.log("renderTrainSchedule");
   // render our trains to the page
-  // get Train List From Database
-  // what if an item has been deleted
-  // database.ref()
-  updateTrainArr();
+  // do we need to update our  Train List array From Database
+  //updateTrainArr();
   for (var i = 0; i < trainList.length; i++) {
     console.log(trainList[i]);
     renderTrainRow(trainList[i], i);
@@ -269,14 +361,15 @@ function renderTrainRow(train, i) {
   console.log("renderTrainRow");
   // Create the new row
   var newRow = $("<tr id='" + train.trainKey + "'>").append(
-    $("<td>").text(train.trainName),
-    $("<td>").text(train.trainDestination),
-    $("<td>").text(train.trainFrequency),
-    $("<td>").text(moment(nextTrain).format("hh:mm")),
+    $("<td>").text(train.trainName).addClass("name"),
+    $("<td>").text(train.trainDestination).addClass("destination"),
+    $("<td>").text(train.trainFrequency).addClass('frequency'),
+    $("<td>").text(moment(nextTrain).format("hh:mm")).addClass("nextTrain"),
     $("<td>").text(tMinutesTillTrain).addClass("minutesTil"),
-    $("<td>").html("<button type='button' data-id='" + train.trainKey + "' class='close' aria-label='Close'><span aria-hidden='true'>&times;</span></button>")
+    $("<td class='update'>").html("<button type='button' data-id='" + train.trainKey + "' data-mode='edit' class='edit' aria-label='Edit'>Edit</button>"),
+    $("<td class='delete'>").html("<button type='button' data-id='" + train.trainKey + "' class='close' aria-label='Close'><span aria-hidden='true'>&times;</span></button>")
   );
-  
+
 
   // Append the new row to the table
   $("#train-table > tbody").append(newRow);
