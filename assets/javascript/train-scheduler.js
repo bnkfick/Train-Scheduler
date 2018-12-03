@@ -243,7 +243,7 @@ $("#train-table").on("click", ".edit", function (event) {
     rowElem.children("td.destination").text(trainDestination);
     //var firstTrainTime = moment($(rowElem.children("td.frequency").children(".editFrequencyName").val().trim(), "HH:mm").format("X");
     //console.log(firstTrainTime);
-    
+
     var trainFrequency = rowElem.children("td.frequency").children(".editFrequency").val().trim();
     rowElem.children("td.frequency").children(".editFrequency").remove;
     rowElem.children("td.frequency").text(trainFrequency);
@@ -253,12 +253,12 @@ $("#train-table").on("click", ".edit", function (event) {
     editedTrain.trainName = trainName;
     editedTrain.trainDestination = trainDestination;
     editedTrain.trainFrequency = trainFrequency;
-    // Uploads train data to the database
 
+    // Uploads train data to the database
     database.ref().child(key).update({ trainName: trainName, trainDestination: trainDestination, trainFrequency: trainFrequency });
     $(this).attr("data-mode", "edit");
     $(this).text("Edit");
-  
+
     // Logs everything to console
     if (DEBUG) console.log(editedTrain.trainName);
     if (DEBUG) console.log(editedTrain.trainDestination);
@@ -366,7 +366,7 @@ function renderTrainRow(train, i) {
     $("<td>").text(train.trainFrequency).addClass('frequency'),
     $("<td>").text(moment(nextTrain).format("hh:mm")).addClass("nextTrain"),
     $("<td>").text(tMinutesTillTrain).addClass("minutesTil"),
-    $("<td class='update'>").html("<button type='button' data-id='" + train.trainKey + "' data-mode='edit' class='edit' aria-label='Edit'>Edit</button>"),
+    $("<td class='update'>").html("<button type='button' class='btn' data-id='" + train.trainKey + "' data-mode='edit' class='edit' aria-label='Edit'>Edit</button>"),
     $("<td class='delete'>").html("<button type='button' data-id='" + train.trainKey + "' class='close' aria-label='Close'><span aria-hidden='true'>&times;</span></button>")
   );
 
