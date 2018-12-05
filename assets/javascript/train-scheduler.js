@@ -137,7 +137,7 @@ $("#add-train-btn").on("click", function (event) {
   if (DEBUG) console.log(newTrain.trainFrequency);
 
   //@todo change to html message
-  console.log("Train successfully added");
+  alert("Train successfully added");
 
   // Clears all of the text-boxes
   $("#train-name-input").val("");
@@ -193,14 +193,15 @@ database.ref().on("child_added", function (childSnapshot) {
 //        Use this field to prevent attempting to convert to input fields if they are already input fields
 //    Toggle button to SAVE
 $("#train-table").on("click", ".edit", function (event) {
-  console.log($(this));
-  console.log($(this).attr("data-mode"));
+  //console.log("EDIT BUTTON");
+  //console.log($(this));
+  //console.log($(this).attr("data-mode"));
   if ($(this).attr("data-mode") === "edit") {
-    console.log("make fields editable");
+    //console.log("make fields editable");
     $(this).attr("data-mode", "save");
     $(this).text("Save");
 
-    console.log($(this).attr("data-mode"));
+    //console.log($(this).attr("data-mode"));
     //var rowElem = $(this).attr("id");
     //console.log($(this).child('#name'));
     var key = $(this).attr("data-id");
@@ -228,17 +229,17 @@ $("#train-table").on("click", ".edit", function (event) {
     var key = $(this).attr("data-id");
     var rowElem = $("#" + key);
 
-    console.log("SAVE" + key);
+    //console.log("SAVE" + key);
     //update the data
     //switch the button text back to save
     //remove the editable fields and replace with static text
     // Grabs user input
     var trainName = rowElem.children("td.name").children(".editTrainName").val().trim();
-    console.log(trainName);
+    //console.log(trainName);
     rowElem.children("td.name").children(".editTrainName").remove;
     rowElem.children("td.name").text(trainName);
     var trainDestination = rowElem.children("td.destination").children(".editTrainDestination").val().trim();
-    console.log(trainDestination);
+    //console.log(trainDestination);
     rowElem.children("td.destination").children(".editTrainDestination").remove;
     rowElem.children("td.destination").text(trainDestination);
     //var firstTrainTime = moment($(rowElem.children("td.frequency").children(".editFrequencyName").val().trim(), "HH:mm").format("X");
@@ -358,7 +359,7 @@ function renderTrainRow(train, i) {
   if (DEBUG) console.log("ARRIVAL TIME: " + moment(nextTrain).format("hh:mm"));
   var nextArrival = moment().diff(moment(train.firstTrainTime, "X"), "months");
   if (DEBUG) console.log(nextArrival);
-  console.log("renderTrainRow");
+
   // Create the new row
   var newRow = $("<tr id='" + train.trainKey + "'>").append(
     $("<td>").text(train.trainName).addClass("name"),
@@ -366,7 +367,7 @@ function renderTrainRow(train, i) {
     $("<td>").text(train.trainFrequency).addClass('frequency'),
     $("<td>").text(moment(nextTrain).format("hh:mm")).addClass("nextTrain"),
     $("<td>").text(tMinutesTillTrain).addClass("minutesTil"),
-    $("<td class='update'>").html("<button type='button' class='btn' data-id='" + train.trainKey + "' data-mode='edit' class='edit' aria-label='Edit'>Edit</button>"),
+    $("<td class='update'>").html("<button type='button' data-id='" + train.trainKey + "' data-mode='edit' class='edit btn' aria-label='Edit'>Edit</button>"),
     $("<td class='delete'>").html("<button type='button' data-id='" + train.trainKey + "' class='close' aria-label='Close'><span aria-hidden='true'>&times;</span></button>")
   );
 
